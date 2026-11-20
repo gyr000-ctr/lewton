@@ -103,6 +103,8 @@ pub mod audio;
 mod bitpacking;
 #[cfg(feature = "ogg")]
 pub mod inside_ogg;
+#[cfg(feature = "ogg")]
+mod multiplex;
 pub mod samples;
 
 #[cfg(feature = "ogg")]
@@ -122,6 +124,24 @@ pub enum VorbisError {
 	BadHeader(header::HeaderReadError),
 	#[cfg(feature = "ogg")]
 	OggError(OggReadError),
+	/// The physical Ogg stream didn't contain any logical
+	/// vorbis bitstream.
+	#[cfg(feature = "ogg")]
+	NoVorbisStream,
+	/// More than one logical vorbis bitstream was found and
+	/// no stream serial was selected.
+	///
+	/// The field contains the serial numbers of all vorbis
+	/// bitstreams discovered so far. Retry the construction
+	/// while passing one of them to
+	/// `OggStreamReader::new_with_serial`.
+	#[cfg(feature = "ogg")]
+	MultipleVorbisStreams(Vec<u32>),
+	/// The logical vorbis bitstream selected via its stream
+	/// serial ended before the physical Ogg stream did, while
+	/// data of other logical bitstreams remained.
+	#[cfg(feature = "ogg")]
+	StreamDisappeared(u32),
 }
 
 impl std::error::Error for VorbisError {}
@@ -133,6 +153,14 @@ impl std::fmt::Display for VorbisError {
 			VorbisError::BadHeader(_) => "Vorbis bitstream header decode problem",
 			#[cfg(feature = "ogg")]
 			VorbisError::OggError(_) => "Ogg decode problem",
+			#[cfg(feature = "ogg")]
+			VorbisError::NoVorbisStream => "No vorbis stream found inside the ogg container",
+			#[cfg(feature = "ogg")]
+			VorbisError::MultipleVorbisStreams(_) =>
+				"Multiple vorbis streams found, please select one by its stream serial",
+			#[cfg(feature = "ogg")]
+			VorbisError::StreamDisappeared(_) =>
+				"The selected vorbis stream ended while other streams continued",
 		})
 	}
 }

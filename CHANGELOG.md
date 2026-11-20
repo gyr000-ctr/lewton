@@ -1,5 +1,25 @@
 # Changes
 
+## Unreleased
+
+* The high level `OggStreamReader` now supports physical Ogg streams that
+  contain several interleaved logical bitstreams, such as `.ogv` files with
+  an audio and a video track.
+  * Added `OggStreamReader::new_with_serial` (and
+    `from_ogg_reader_with_serial`) to select the vorbis bitstream by its
+    stream serial.
+  * Added `switch_stream` to change the selected stream and
+    `vorbis_stream_serials` to list the discovered vorbis serials. The
+    decoding state (window overlap and absolute granule position) is kept
+    per serial, so switching and switching back continues each stream.
+  * Pages and packets are split by serial during a single forward scan with
+    no re-reading; non selected packets are dropped on the spot, keeping
+    peak memory at packet level.
+  * Added three distinguishable `VorbisError` variants: `NoVorbisStream`,
+    `MultipleVorbisStreams` (carries the candidate serials) and
+    `StreamDisappeared` (the selected stream ended while others continued).
+  * Added the internal `multiplex` module with the serial based selector.
+
 ## Release 0.10.2 - January 20, 2021
 
 * Updated ogg to 0.8

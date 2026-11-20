@@ -17,6 +17,29 @@ If you want to know how to use this crate, look at the examples folder.
 This crate has a low level API for per-packet decoding in the `audio` and `header` modules,
 and a high level API for ogg/vorbis streams in the `inside_ogg` module.
 
+### Multiplexed (multi-stream) Ogg files
+
+A physical Ogg stream can interleave several logical bitstreams, identified
+by their stream serial number — for example an `.ogv` file with a theora
+video track and a vorbis audio track. `OggStreamReader::new` selects the
+first vorbis bitstream; if several concurrent vorbis bitstreams exist it
+returns `VorbisError::MultipleVorbisStreams` with their serials, and you can
+pick one explicitly:
+
+```rust
+use lewton::inside_ogg::OggStreamReader;
+
+let mut reader = OggStreamReader::new_with_serial(file, serial)?;
+// `switch_stream` changes the selected stream later on; per-stream decoding
+// state (overlap window and absolute granule position) is preserved.
+```
+
+Pages and packets of the other bitstreams are skipped during one forward
+scan and never buffered, so peak memory stays at packet level. If the
+selected stream ends while others continue, decoding fails with
+`VorbisError::StreamDisappeared`; a container without any vorbis stream
+fails with `VorbisError::NoVorbisStream`.
+
 Some parts were created with help from the public domain
 [stb_vorbis](http://nothings.org/stb_vorbis/) decoder implementation.
 

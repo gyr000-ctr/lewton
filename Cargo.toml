@@ -38,6 +38,9 @@ futures = { version = "0.1", optional = true }
 [dev-dependencies]
 ogg = "0.8"
 alto = "3"
+# Pure-Rust vorbis encoder, only used by the multiplex unit tests to
+# synthesise ogg/vorbis streams in-memory (no network or libvorbis needed).
+rusty_vorbis = "0.1"
 
 [package.metadata.docs.rs]
 features = ["async_ogg"]
